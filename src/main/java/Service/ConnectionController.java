@@ -50,10 +50,16 @@ public class ConnectionController {
 
     public void CreateUser(User user){
         try {
-            // TODO: create virtual users instead of real
-            String message = "useradd " + user.getName() + " --home /var/www/" + user.getName()
-                    + " --shell /bin/false --group nogroup ; sudo -S -p '' mkdir /var/www/" + user.getName()
-                    + " ; sudo -S -p '' passwd " + user.getPassword();
+
+//            real users
+//
+//            String message = "useradd " + user.getName() + " --home /var/www/" + user.getName()
+//                    + " --shell /bin/false --group nogroup ; sudo -S -p '' mkdir /var/www/" + user.getName()
+//                    + " ; sudo -S -p '' passwd " + user.getPassword();
+
+            String message = "ftpasswd --passwd --file=/etc/proftpd/ftpd.passwd --name=" + user.getName() +
+                    " --uid=" + (10 + user.getId()) + " --gid=33 --home=/var/www/" + user.getName() +
+                    " --shell=/bin/false --change-password";
 
             Channel channel = session.openChannel("exec");
             ((ChannelExec)channel).setCommand("sudo -S -p '' " + message);
@@ -64,7 +70,7 @@ public class ConnectionController {
             channel.connect();
             logger.info("channel is connected");
 
-            out.write(("adamova\n").getBytes());
+            out.write((user.getServer().getAdminPass() + '\n').getBytes());
             out.flush();
 
             out.write((user.getPassword() + '\n').getBytes());

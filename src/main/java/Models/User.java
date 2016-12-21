@@ -1,12 +1,13 @@
 package Models;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.Set;
 
 
 @Entity
 @Table(name = "users")
-public class User {
+public class User implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -15,8 +16,8 @@ public class User {
     private String name;
     private String password;
 
-    @ManyToMany
-    private Set<FTPServer> servers;
+    @ManyToOne
+    private FTPServer server;
 
     public User(Long id, String name, String password, String serverUrl) {
         this.id = id;
@@ -25,8 +26,8 @@ public class User {
     }
     public User(){}
 
-    public Set<FTPServer> getServers() { return servers;    }
-    public void setServers(Set<FTPServer> servers) { this.servers = servers;    }
+    public FTPServer getServer() { return server;    }
+    public void setServer(FTPServer server) { this.server = server;    }
 
     public Long getId(){
         return id;

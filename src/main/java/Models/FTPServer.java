@@ -18,12 +18,21 @@ public class FTPServer implements Serializable{
     private Long id;
 
     private int port;
-    private InetAddress address;
+    private String address;
     private String adminName;
     private String adminPass;
 
-    @ManyToMany
+    @OneToMany
     private Set<User> users;
+
+    public FTPServer(){}
+
+    public FTPServer(int port, String address, String adminName, String adminPass){
+        this.port = port;
+        this.address = address;
+        this.adminName = adminName;
+        this.adminPass = adminPass;
+    }
 
     public Set<User> getUsers() { return users;    }
     public void setUsers(Set<User> users) { this.users = users;    }
@@ -42,10 +51,10 @@ public class FTPServer implements Serializable{
         this.port = port;
     }
 
-    public InetAddress getAddress(){
+    public String getAddress(){
         return address;
     }
-    public void setAddress(InetAddress address){
+    public void setAddress(String address){
         this.address = address;
     }
 

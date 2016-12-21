@@ -1,8 +1,10 @@
 package Service;
 
 
+import Models.FTPServer;
 import Models.User;
 import org.apache.log4j.Logger;
+import org.hibernate.Session;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.*;
@@ -17,30 +19,36 @@ import java.net.URI;
 @Path("/service")
 public class Service {
 
-    // TODO: put this into DB
-    private static String ADMIN_NAME = "andrey";
-    private static String ADMIN_PASS = "adamova";
-    private static String SERVER_URL = "";
-
     private static Logger logger = Logger.getLogger("simple");
 
     @GET
     @Produces("text/plain")
     public String Hello(){
+
         logger.info("Hello invoked");
         return "Hello service";
     }
 
     @POST
-    @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createUser(User user){
         ConnectionController controller = new ConnectionController();
-        // TODO: take server data from DB
-        controller.Connect(ADMIN_NAME, ADMIN_PASS, SERVER_URL);
+
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        FTPServer server = user.getServer();
+
+
+        controller.Connect(server.getAdminName(), server.getAdminPass(), server.getAddress());
         controller.CreateUser(user);
 
         // TODO: verify user creation by parsing configuration file
+
+        // save user in DB
+        session.save(user);
+        session.getTransaction().commit();
+        session.close();
 
         URI location = URI.create("/service" + user.getId());
         return Response.created(location).build();
@@ -49,8 +57,11 @@ public class Service {
     @GET
     @Path("{id}")
     public User getUser(@PathParam("id") Long id){
-        // TODO: take user from DB by uuid
-        User user = new User();
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        User user = (User)session.get(User.class, id);
+        session.close();
         return user;
     }
 }
