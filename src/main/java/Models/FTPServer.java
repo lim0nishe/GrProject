@@ -1,8 +1,11 @@
 package Models;
 
+import org.jboss.resteasy.spi.touri.MappedBy;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -23,7 +26,7 @@ public class FTPServer implements Serializable{
     private String adminPass;
 
     @OneToMany
-    private Set<User> users;
+    private List<User> users;
 
     public FTPServer(){}
 
@@ -34,8 +37,8 @@ public class FTPServer implements Serializable{
         this.adminPass = adminPass;
     }
 
-    public Set<User> getUsers() { return users;    }
-    public void setUsers(Set<User> users) { this.users = users;    }
+    public List<User> getUsers() { return users;    }
+    public void setUsers(List<User> users) { this.users = users;    }
 
     public Long getId(){
         return id;

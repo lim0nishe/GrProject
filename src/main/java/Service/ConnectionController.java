@@ -3,6 +3,8 @@ import Models.User;
 import com.jcraft.jsch.*;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
@@ -10,7 +12,7 @@ import java.io.OutputStream;
  */
 public class ConnectionController {
 
-    private static org.apache.log4j.Logger logger = Logger.getLogger("simple");
+    private static Logger logger = Logger.getLogger("simple");
     private JSch jsch;
     private Session session;
 
@@ -22,6 +24,8 @@ public class ConnectionController {
         try {
             // setting session for 22 port
             session = jsch.getSession(user, hostname, 22);
+
+
             session.setPassword(password);
 
             // skip host-key check
@@ -59,7 +63,7 @@ public class ConnectionController {
 
             String message = "ftpasswd --passwd --file=/etc/proftpd/ftpd.passwd --name=" + user.getName() +
                     " --uid=" + (10 + user.getId()) + " --gid=33 --home=/var/www/" + user.getName() +
-                    " --shell=/bin/false --change-password";
+                    " --shell=/bin/false ; sudo -S -p '' mkdir /var/www/" + user.getName();
 
             Channel channel = session.openChannel("exec");
             ((ChannelExec)channel).setCommand("sudo -S -p '' " + message);
@@ -85,6 +89,34 @@ public class ConnectionController {
         catch (Exception e){
             e.printStackTrace();
             logger.error("error while creating user");
+        }
+    }
+
+    public boolean validateCreation(User user){
+        try {
+            Channel channel = session.openChannel("exec");
+            // посмотреть, возможно надо добавить символ $ перед двоеточием
+            ((ChannelExec)channel).setCommand("sudo -S -p '' grep ^" + user.getName() + ": /etc/proftpd/ftpd.passwd");
+            InputStream in = channel.getInputStream();
+
+            // use this for debug
+            byte[] buffer = new byte[1024];
+
+            int readed = in.read(buffer);
+            if (readed == 0)
+                return false;
+
+            // check if there will be more than 1 result in grep
+
+            return true;
+        }
+        catch (JSchException e){
+            logger.error("error while testing creation");
+            return false;
+        }
+        catch (IOException e2){
+            e2.printStackTrace();
+            return false;
         }
     }
 }

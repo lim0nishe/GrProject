@@ -13,14 +13,17 @@ public class User implements Serializable {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @Column(unique = true)
     private String name;
+
     private String password;
 
+    // не обновляется промежуточная таблица
     @ManyToOne
     private FTPServer server;
 
-    public User(Long id, String name, String password, String serverUrl) {
-        this.id = id;
+    public User(String name, String password, FTPServer server) {
+        this.server = server;
         this.name = name;
         this.password = password;
     }
