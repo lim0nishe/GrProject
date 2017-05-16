@@ -24,17 +24,21 @@ public class FTPServer implements Serializable{
     private String address;
     private String adminName;
     private String adminPass;
+    private String mountedSpace;
+    private String bandwith;
 
-    @OneToMany
+    @OneToMany(mappedBy = "server")
     private List<User> users;
 
     public FTPServer(){}
 
-    public FTPServer(int port, String address, String adminName, String adminPass){
+    public FTPServer(int port, String address, String adminName, String adminPass, String mountedSpace, String bandwidth){
         this.port = port;
         this.address = address;
         this.adminName = adminName;
         this.adminPass = adminPass;
+        this.mountedSpace = mountedSpace;
+        this.bandwith = bandwidth;
     }
 
     public List<User> getUsers() { return users;    }
@@ -74,4 +78,10 @@ public class FTPServer implements Serializable{
     public void setAdminPass(String adminPass){
         this.adminPass = adminPass;
     }
+
+    public String getMountedSpace() { return mountedSpace; }
+    public void setMountedSpace(String mountedSpace){ this.mountedSpace = mountedSpace; }
+
+    public String getBandwith() { return bandwith; }
+    public void setBandwith(String bandwith){ this.bandwith = bandwith; }
 }

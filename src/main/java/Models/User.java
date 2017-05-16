@@ -17,15 +17,17 @@ public class User implements Serializable {
     private String name;
 
     private String password;
+    private String quota;
 
-    // не обновляется промежуточная таблица
-    @ManyToOne
+    @ManyToOne()
+    @JoinColumn(name = "server_id")
     private FTPServer server;
 
-    public User(String name, String password, FTPServer server) {
+    public User(String name, String password, FTPServer server, String quota) {
         this.server = server;
         this.name = name;
         this.password = password;
+        this.quota = quota;
     }
     public User(){}
 
@@ -53,4 +55,6 @@ public class User implements Serializable {
         this.password = password;
     }
 
+    public String getQuota(){ return quota; }
+    public void setQuota(String quota){ this.quota = quota; }
 }

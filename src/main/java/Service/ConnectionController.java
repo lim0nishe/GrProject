@@ -1,42 +1,70 @@
 package Service;
+import Models.FTPServer;
 import Models.User;
 import com.jcraft.jsch.*;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.Formatter;
 
-/**
- * Created by Lem0n on 30.10.2016.
- */
+import java.io.*;
+import java.util.Properties;
+
+
 public class ConnectionController {
 
-    private static Logger logger = Logger.getLogger("simple");
+    private static Logger logger = Logger.getLogger("file");
     private JSch jsch;
     private Session session;
+    private Properties properties;
 
     public ConnectionController(){
         jsch = new JSch();
+        properties = new Properties();
     }
 
-    public void Connect(String user, String password, String hostname){
-        try {
-            // setting session for 22 port
+    public void keyConnect(String user, String hostname, String FTPProperties) throws JSchException{
+        try{
+
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            try(InputStream resourceStream = classLoader.getResourceAsStream(FTPProperties + ".properties")){
+                properties.loadFromXML(resourceStream);
+            }
+
+            //properties.loadFromXML(new FileInputStream(FTPProperties));
+            File tmp = File.createTempFile("id_rsa", "");
+            OutputStream out = new FileOutputStream(tmp);
+            InputStream in = getClass().getResourceAsStream("/id_rsa");
+
+            IOUtils.copy(in, out);
+
+            out.close();
+            in.close();
+            jsch.addIdentity(tmp.getAbsolutePath());
+
             session = jsch.getSession(user, hostname, 22);
-
-
-            session.setPassword(password);
-
-            // skip host-key check
             session.setConfig("StrictHostKeyChecking", "no");
             session.connect();
-            logger.info("session open");
+            logger.info("session open by public key");
         }
-        catch (Exception e){
+        catch (IOException e){
             e.printStackTrace();
-            logger.error("error while opening session");
+            logger.error("error in reading key file");
         }
+    }
+
+    public void Connect(String user, String password, String hostname) throws JSchException{
+        // setting session for 22 port
+        session = jsch.getSession(user, hostname, 22);
+
+
+        session.setPassword(password);
+
+        // skip host-key check
+        session.setConfig("StrictHostKeyChecking", "no");
+        session.connect();
+        logger.info("session open");
     }
 
     public void ShellConnect() throws JSchException{
@@ -61,10 +89,12 @@ public class ConnectionController {
 //                    + " --shell /bin/false --group nogroup ; sudo -S -p '' mkdir /var/www/" + user.getName()
 //                    + " ; sudo -S -p '' passwd " + user.getPassword();
 
-            String message = "ftpasswd --passwd --file=/etc/proftpd/ftpd.passwd --name=" + user.getName() +
-                    " --uid=" + (10 + user.getId()) + " --gid=33 --home=/var/www/" + user.getName() +
-                    " --shell=/bin/false ; sudo -S -p '' mkdir /var/www/" + user.getName();
+            Formatter formatter = new Formatter();
 
+            String message = formatter.format(properties.getProperty("createUser"), user.getName(),
+                    (10 + user.getId()), user.getName(), user.getName()).toString();
+
+            System.out.println(message);
             Channel channel = session.openChannel("exec");
             ((ChannelExec)channel).setCommand("sudo -S -p '' " + message);
 
@@ -83,6 +113,8 @@ public class ConnectionController {
             out.flush();
             logger.info("create user method executed");
 
+
+
             channel.disconnect();
             logger.info("channel disconnected");
         }
@@ -95,19 +127,25 @@ public class ConnectionController {
     public boolean validateCreation(User user){
         try {
             Channel channel = session.openChannel("exec");
-            // посмотреть, возможно надо добавить символ $ перед двоеточием
             ((ChannelExec)channel).setCommand("sudo -S -p '' grep ^" + user.getName() + ": /etc/proftpd/ftpd.passwd");
             InputStream in = channel.getInputStream();
-
+            OutputStream out = channel.getOutputStream();
+            channel.connect();
+            out.write((user.getServer().getAdminPass() + '\n').getBytes());
+            out.flush();
             // use this for debug
             byte[] buffer = new byte[1024];
 
             int readed = in.read(buffer);
-            if (readed == 0)
+            System.out.println(buffer);
+            if (readed == 0) {
+                channel.disconnect();
                 return false;
+            }
 
+            logger.info("validation success");
             // check if there will be more than 1 result in grep
-
+            channel.disconnect();
             return true;
         }
         catch (JSchException e){
@@ -117,6 +155,97 @@ public class ConnectionController {
         catch (IOException e2){
             e2.printStackTrace();
             return false;
+        }
+    }
+
+    public void setQuota(User user, String quota){
+        try{
+            logger.info("setQuota method invoked");
+            Channel channel = session.openChannel("exec");
+
+            Formatter formatter = new Formatter();
+            String message = formatter.format(properties.getProperty("setQuota"), user.getName(), quota).toString();
+
+            //String message = "ftpquota --name=" + user.getName() + " --bytes-upload=" + quota +
+            //        " --add-record --type=limit --quota-type=user --units=Mb --verbose" +
+            //        " --table-path=/usr/local/etc/proftpd.quota.limittab";
+
+            ((ChannelExec)channel).setCommand("sudo -S -p '' " + message);
+
+            OutputStream out = channel.getOutputStream();
+            ((ChannelExec)channel).setErrStream(System.err);
+
+            channel.connect();
+            logger.info("channel is connected");
+
+            out.write((user.getServer().getAdminPass() + '\n').getBytes());
+            out.flush();
+            channel.disconnect();
+            logger.info("channel disconnected");
+        }
+        catch (JSchException e){
+            logger.error("setQuota JSchException");
+            e.printStackTrace();
+        }
+        catch (IOException e2){
+            logger.error("setQuota IOException");
+            e2.printStackTrace();
+        }
+    }
+    public void closeSession(){
+        session.disconnect();
+    }
+    public String checkFreeSpace(FTPServer server){
+        logger.info("check free space method invoked");
+        try {
+            Channel channel = session.openChannel("exec");
+            ((ChannelExec) channel).setCommand("df -h /");
+            InputStream in = channel.getInputStream();
+            OutputStream out = channel.getOutputStream();
+            channel.connect();
+            out.write((server.getAdminPass() + '\n').getBytes());
+            out.flush();
+
+            byte[] buffer = new byte[1024];
+
+            int readed = in.read(buffer);
+            System.out.println(buffer);
+            if (readed == -1) {
+                logger.error("cant read size");
+                channel.disconnect();
+                return null;
+            }
+            channel.disconnect();
+            return new String(buffer, 0, readed, "UTF-8");
+        }
+        catch (Exception e){
+            logger.error("exception in checkFreeSpace method");
+            e.printStackTrace();
+            return null;
+        }
+    }
+    public String executeCommand(String command){
+        try {
+            Channel channel = session.openChannel("exec");
+            ((ChannelExec) channel).setCommand(command);
+            InputStream is = channel.getInputStream();
+            channel.connect();
+
+            String result = "";
+
+            int readed;
+            byte[] buffer = new byte[1024];
+            while ((readed = is.read(buffer)) > 0){
+                result = new String(buffer, 0 , readed, "UTF-8");
+                System.out.println(result);
+            }
+            // закрой channel, try with resources не работает, т.к. Channel не
+            // имплементит AutoClosable
+            return result;
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            return null;
         }
     }
 }
