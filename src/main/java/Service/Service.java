@@ -26,6 +26,8 @@ import java.util.stream.Stream;
 @Path("/service")
 public class Service {
 
+    // class uses token authorization
+
     private static Logger logger = Logger.getLogger("file");
 
     @GET
@@ -80,7 +82,7 @@ public class Service {
 
             ConnectionController controller = new ConnectionController();
 
-
+            // create user on FTP server and validate creation
             controller.keyConnect(server.getAdminName(), server.getAddress(), properties.getProperty("ftpServer"));
             //controller.Connect(server.getAdminName(), server.getAdminPass(), server.getAddress());
             controller.CreateUser(user);

@@ -14,6 +14,9 @@ import java.util.Properties;
 
 public class ConnectionController {
 
+    // using for ssh connection
+    // all commands for FTP server in FTPProperties file (current FTP server is ProFTPD)
+
     private static Logger logger = Logger.getLogger("file");
     private JSch jsch;
     private Session session;
@@ -33,6 +36,8 @@ public class ConnectionController {
             }
 
             //properties.loadFromXML(new FileInputStream(FTPProperties));
+
+            // DONT LOOK AT THIS, JUST TEMPORARY DECISION
             File tmp = File.createTempFile("id_rsa", "");
             OutputStream out = new FileOutputStream(tmp);
             InputStream in = getClass().getResourceAsStream("/id_rsa");
@@ -41,6 +46,8 @@ public class ConnectionController {
 
             out.close();
             in.close();
+            // OK THIS OVER
+
             jsch.addIdentity(tmp.getAbsolutePath());
 
             session = jsch.getSession(user, hostname, 22);
@@ -54,6 +61,7 @@ public class ConnectionController {
         }
     }
 
+    // connect without key authentication, idk why I didnt delete this
     public void Connect(String user, String password, String hostname) throws JSchException{
         // setting session for 22 port
         session = jsch.getSession(user, hostname, 22);
@@ -127,7 +135,10 @@ public class ConnectionController {
     public boolean validateCreation(User user){
         try {
             Channel channel = session.openChannel("exec");
+
+            // remove command to proftpd.properties
             ((ChannelExec)channel).setCommand("sudo -S -p '' grep ^" + user.getName() + ": /etc/proftpd/ftpd.passwd");
+
             InputStream in = channel.getInputStream();
             OutputStream out = channel.getOutputStream();
             channel.connect();
@@ -160,6 +171,7 @@ public class ConnectionController {
 
     public void setQuota(User user, String quota){
         try{
+            // TODO: test this method
             logger.info("setQuota method invoked");
             Channel channel = session.openChannel("exec");
 
@@ -192,9 +204,11 @@ public class ConnectionController {
             e2.printStackTrace();
         }
     }
+
     public void closeSession(){
         session.disconnect();
     }
+
     public String checkFreeSpace(FTPServer server){
         logger.info("check free space method invoked");
         try {

@@ -8,6 +8,9 @@ import java.util.Map.Entry;
 
 
 public class JsonResponse {
+
+    // class for creating JSON responses
+
     static final String VALIDATION_ERROR = "{ \"status\" : \"error\"," +
             " \"message\" : \"username or password is not valid\" }";
     static final String USER_CREATION_ERROR = "{ \"status\" : \"error\"," +
@@ -20,8 +23,6 @@ public class JsonResponse {
             " \"message\" : \"session expired\" }";
     static final String AUTHORIZATION_ERROR = "{ \"status\" : \"error\"," +
             " \"message\" : \"front end authorization error\" }";
-    static final String AUTHORIZATION_SUCCESS = "{ \"status\" : \"success\"," +
-            " \"message\" : \"authorization success\" }";
     static final String TOKEN_EXISTS_ERROR = "{ \"status\" : \"error\"," +
             " \"message\" : \"token with that login is already exists\" }";
     static final String JSCH_CONNECTION_ERROR = "{ \"status\" : \"error\"," +
@@ -62,15 +63,7 @@ public class JsonResponse {
         response.append("\"\n");
         response.append(" \"users\" : [ \n");
         response.append(createUserResponse(users));
-//        for (User user : users){
-//            response.append("{\n");
-//            response.append("\"id\" : \"");
-//            response.append(user.getId());
-//            response.append("\",\n");
-//            response.append("\"username\" : \"");
-//            response.append(user.getName());
-//            response.append("\"\n},");
-//        }
+
         response.deleteCharAt(response.length() - 1);
         response.append("\n]\n}");
         return response.toString();

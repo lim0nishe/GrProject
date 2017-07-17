@@ -7,9 +7,6 @@ import org.hibernate.Query;
 import org.hibernate.Session;
 
 import java.io.FileInputStream;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Properties;
 import org.apache.commons.codec.digest.Crypt;
@@ -20,40 +17,18 @@ public class FrontEndSessionController {
     private static int BASE_LENGTH = 56;
     private static int HASH_LENGTH = 56;
 
+    // returns SHA-512 hash
     String crypt(){
 
         // generate random string
         StringBuilder base = new StringBuilder();
         String alphabet = "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890";
         for (int i = 0; i < BASE_LENGTH; i++){
-            base.append(alphabet.charAt(i));
+            base.append(alphabet.charAt((int)(Math.random()*(alphabet.length() - 1))));
         }
         return (Crypt.crypt(base.toString())).substring(0, HASH_LENGTH);
 
     }
-
-//    String md5Hash(String st){
-//
-//        MessageDigest messageDigest;
-//        byte[] digest = new byte[0];
-//        try{
-//            messageDigest = MessageDigest.getInstance("MD5");
-//            messageDigest.reset();
-//            messageDigest.update(st.getBytes());
-//            digest = messageDigest.digest();
-//        } catch (NoSuchAlgorithmException e) {
-//            logger.error("error in md5 hash algorithm");
-//            e.printStackTrace();
-//        }
-//
-//        BigInteger bigInt = new BigInteger(1, digest);
-//        String md5Hex = bigInt.toString(16);
-//
-//        while( md5Hex.length() < 32 ){
-//            md5Hex = "0" + md5Hex;
-//        }
-//        return md5Hex;
-//    }
 
     public boolean isActive(String address, String sessionToken){
         Session session = HibernateUtil.getSessionFactory().openSession();

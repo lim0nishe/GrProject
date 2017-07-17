@@ -18,7 +18,7 @@ public class HibernateUtil {
         try{
             Properties properties = new Properties();
 
-            //Tomcat
+            // Tomcat
             properties.loadFromXML(new FileInputStream("/TomcatFiles/myProperties.properties"));
 
             // WildFly

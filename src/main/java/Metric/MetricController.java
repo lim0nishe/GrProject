@@ -13,16 +13,17 @@ import java.util.*;
 
 public class MetricController {
     private MetricFactory metricFactory;
-    private HashMap<String, Metric> metricMap;
     private static Logger logger = Logger.getLogger("file");
     private static Logger logger2 = Logger.getLogger("metric");
 
     public MetricController(){
         metricFactory = new MetricFactory();
+
+        // load all available parameters for metric
         metricFactory.loadClasses("metricClasses.txt");
-        metricMap = new HashMap<String, Metric>();
     }
 
+    // calculate metric for FTP server
     public Double calculateMetric(FTPServer server, String ftpProperties, String quota){
         try {
             Double result = 0.0;
@@ -69,7 +70,6 @@ public class MetricController {
             }
 
             // calculate other metrics
-            //
             for (FTPServer tmpServer : result.keySet()){
                 Double resultRank = result.get(tmpServer)
                         + calculateMetric(tmpServer, properties.getProperty("ftpServer"), quota);
